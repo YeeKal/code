@@ -1,4 +1,4 @@
-/*graph with adjacency matrix*/
+/*graph with adjacency list*/
 #include<stdio.h>
 #include<stdlib.h>
 
