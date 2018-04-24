@@ -69,8 +69,8 @@ void RrtGraph::drawLine(Point p1, Point p2) const {
 Point RrtGraph::randomNode() const {
 	//heuristic random
 	//uncommon this, time will be reduced greatly
-	/*if (rand() % 2 == 0)
-		return goal;*/
+	if (rand() % 2 == 0)
+		return goal;
 	int x = rand() % cols;
 	int y = rand() % rows;
 	return Point(x, y);
