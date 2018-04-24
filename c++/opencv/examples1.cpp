@@ -1,10 +1,13 @@
 /*****************************************************
 support: opencv 3.4.1   ubuntu 16.04
+
 example1  trakbar to ajust the brightness and contrast value
-example2    open the camera and save to <avi> file
-example3    open the camera and process with Sobel operator
-example4    mouse event and drawing function
-example5    object detection with background difference
+example2  open the camera and save to <avi> file
+example3  open the camera and process with Sobel operator
+example4  mouse event and drawing function
+example5  object detection with background difference
+example6  houg transformation to detect line and circles
+
 
 *****************************************************/
 
@@ -372,4 +375,71 @@ void imagePross(Mat img,Mat background){
     imshow("Live",img); 
     imshow("gray",out_dilate);
 
+}
+
+/*
+example6  houg transformation to detect line and circles
+*/
+#include <iostream>
+#include <string>
+#include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/videoio.hpp>
+#include <opencv2/imgcodecs.hpp>
+
+using namespace std;
+using namespace cv;
+
+int main(){
+    Mat img=imread("imgs/house.jpg");
+    Mat img_circle=imread("imgs/circle.jpeg");
+
+    Mat midImg,destImg;
+    Mat midImg_circle,destImg_circle;
+
+    Canny(img, midImg, 50, 200,3);
+    cvtColor(midImg,destImg ,COLOR_GRAY2BGR);
+    imshow("img",img);
+
+    vector<Vec2f> lines;
+    HoughLines(midImg, lines, 1, CV_PI/180, 200);
+    cout<<"num of lines:"<<lines.size()<<endl;
+    for(size_t i=0;i<lines.size();i++){
+        float rho=lines[i][0],theta=lines[i][1];
+        Point pt1,pt2;
+        double a=cos(theta),b=sin(theta);
+        double x0=a*rho, y0=b*rho;
+        pt1.x=round(x0+1000*(-b));
+        pt1.y=round(y0+1000*(a));
+        pt2.x=round(x0-1000*(-b));
+        pt2.y=round(y0-1000*(a));
+        line(destImg,pt1,pt2,Scalar(30,30,255),1,CV_AA);
+    }
+    imshow("houg",destImg);
+
+    //houghlines p
+    vector<Vec4i> plines;
+    HoughLinesP(midImg, plines, 1, CV_PI/180, 100,30,5);
+    for(size_t i;i<plines.size();i++){
+        line(destImg,Point(plines[i][0],plines[i][1]),
+            Point(plines[i][2],plines[i][3]),Scalar(30,30,255),3,8);
+    }
+    
+    //hough circle
+    imshow("img circle",img_circle);
+    cvtColor(img_circle,midImg_circle,COLOR_RGB2GRAY);
+    GaussianBlur(midImg_circle, destImg_circle, Size(9,9), 2,2);
+    vector<Vec3f> circles;
+    HoughCircles(destImg_circle, circles, HOUGH_GRADIENT, 2, 10,200,100);
+    for(size_t i=0;i<circles.size();i++){
+        Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
+        int radius = cvRound(circles[i][2]);
+        circle(img_circle,center,3,Scalar(0,255,0),-1,8,0);
+        circle(img_circle,center,radius,Scalar(0,0,255),3,8,0);
+    }
+    imshow("hough gray",destImg_circle);
+    imshow("hougp",destImg);
+    while(char(waitKey(5))!='q'){}
+    return 0;
 }
