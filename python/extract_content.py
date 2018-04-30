@@ -1,10 +1,13 @@
 #!/usr/bin/python3
 # coding:utf-8
+
 '''
+author: yee
+support: python-3.5
+create: 2018-4-24
+update: 2018-4-24
 function: extract the content in the directory and write it to a markdown file.
           this is initially encouraged by the README.md in github
-author: yee
-update: 2018-4-24
 '''
 
 import os
