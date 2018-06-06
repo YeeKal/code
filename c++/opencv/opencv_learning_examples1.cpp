@@ -7,6 +7,7 @@ example3  open the camera and process with Sobel operator
 example4  mouse event and drawing function
 example5  object detection with background difference
 example6  houg transformation to detect line and circles
+example7  Features2D + Homography to find a known object
 
 
 *****************************************************/
@@ -443,3 +444,96 @@ int main(){
     while(char(waitKey(5))!='q'){}
     return 0;
 }
+
+/*
+example7  Features2D + Homography to find a known object
+*/
+
+#include <iostream>
+#include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
+#include <opencv2/features2d/features2d.hpp>
+#include <opencv2/xfeatures2d.hpp>
+#include <opencv2/calib3d/calib3d.hpp>
+#include <pthread.h>
+#include <vector>
+
+using namespace std;
+using namespace cv;
+using namespace cv::xfeatures2d;
+int main(){
+
+    Mat sift1=imread("imgs/sift1.jpeg");
+    Mat sift2=imread("imgs/sift2.jpg");
+    if(!sift1.data || !sift2.data){
+        cout<<"Error reading imgs!"<<endl;
+    }
+    
+    // imshow("sift1", sift1);
+    // imshow("sift2", sift2);
+    
+    int min_hessian=400;
+
+    Ptr<SURF> detector=SURF::create();
+    detector->setHessianThreshold(min_hessian);
+    vector<KeyPoint> keypoint1,keypoint2;
+    Mat descriptors1,descriptors2;
+
+    detector->detectAndCompute(sift1,Mat(),keypoint1,descriptors1);
+    detector->detectAndCompute(sift2,Mat(),keypoint2,descriptors2);
+
+    //matching
+    FlannBasedMatcher matcher;
+    vector<DMatch> matches;
+    matcher.match(descriptors1,descriptors2,matches);
+
+    double max_dist=0;
+    double min_dist=100;
+
+    //find max/min dist
+    for(int i=0;i<descriptors1.rows;i++){
+        double dist=matches[i].distance;
+        if(dist<min_dist) min_dist=dist;
+        if(dist>max_dist) max_dist=dist;
+    }
+    cout<<"max dist:"<<max_dist<<endl<<"min dist"<<min_dist<<endl;
+
+    //draw good matches dist<2*min_dist
+    vector<DMatch> good_matches;
+    for(int i=0;i<descriptors1.rows;i++){
+        if(matches[i].distance<=max(2*min_dist,0.02))
+            good_matches.push_back(matches[i]);
+    }
+    Mat img_matches;
+    drawMatches(sift1, keypoint1, sift2, keypoint2, good_matches, img_matches,
+                    Scalar::all(-1),Scalar::all(-1),vector<char>(),
+                    DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
+    namedWindow("matches");
+    
+
+    //localize the object
+    vector<Point2f> obj;
+    vector<Point2f> scene;
+    for(size_t i=0;i<good_matches.size();i++){
+        obj.push_back(keypoint1[good_matches[i].queryIdx].pt);
+        scene.push_back(keypoint2[good_matches[i].trainIdx].pt);
+    }
+    Mat H=findHomography(obj, scene, RANSAC);
+    //get the corners from sift1
+    vector<Point2f> obj_corner(4);
+    obj_corner[0]=cvPoint(0,0);
+    obj_corner[1]=cvPoint(sift1.cols,0);
+    obj_corner[2]=cvPoint(sift1.cols,sift1.rows);
+    obj_corner[3]=cvPoint(0,sift1.rows);
+    vector<Point2f> scene_corner(4);
+    perspectiveTransform(obj_corner, scene_corner, H);
+
+    line(img_matches,scene_corner[0]+Point2f(sift1.cols, 0),scene_corner[1]+Point2f(sift1.cols, 0),Scalar(0,255,0),4);
+    line(img_matches,scene_corner[1]+Point2f(sift1.cols, 0),scene_corner[2]+Point2f(sift1.cols, 0),Scalar(0,255,0),4);
+    line(img_matches,scene_corner[2]+Point2f(sift1.cols, 0),scene_corner[3]+Point2f(sift1.cols, 0),Scalar(0,255,0),4);
+    line(img_matches,scene_corner[3]+Point2f(sift1.cols, 0),scene_corner[0]+Point2f(sift1.cols, 0),Scalar(0,255,0),4);
+    imshow("matches",img_matches);
+    while(char(waitKey(5))!='q'){}
+    return 0;
+}   
