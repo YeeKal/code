@@ -38,9 +38,21 @@ class MaskGenerate{
 };
 
 int main(){
-    string bg_path="img/wallheaven.jpg";//"img/1/bg.jpg";
-    string mask_path="img/1/mask.jpg";
-    string fg_path="img/1/fg.jpg";//"img/kaola.jpg";//"img/1/fg.jpg";
+    //m1
+    // string bg_path="img/ground.jpg";//img/wallheaven.jpg";//"img/1/bg.jpg";
+    // string fg_path="img/cat2.jpg";//"img/kaola.jpg";//"img/1/fg.jpg";
+
+    //m2
+    string bg_path="img/1/bg.jpg";
+    string fg_path="img/1/fg.jpg";
+
+    // Mat grass=imread("img/skelon.jpg");
+    // Mat ground;
+    // resize(grass,ground,Size(grass.cols/5, grass.rows/5),0,0,INTER_LINEAR);
+    // Rect ha=Rect(0,0,1000,1000);
+    // imshow("ground",ground);
+    // imwrite("img/robot_lab.jpg",ground);
+    // waitKey();
 
     Mat bg,fg,mask;
     bg=imread(bg_path);
@@ -56,7 +68,7 @@ int main(){
     imshow("mask",mask);
 
     Mat general_mixed_img,poisson_mixed_img,compare_img;
-    seamlessClone(bg, fg, mask, 0, 0, general_mixed_img,poisson_mixed_img);
+    seamlessClone(bg, fg, mask, 50, 80, general_mixed_img,poisson_mixed_img);
 
     hconcat(general_mixed_img,poisson_mixed_img,compare_img);
     imshow("result",compare_img);
@@ -232,46 +244,10 @@ void seamlessClone(const Mat& bg,
         }
     }
 
-    //cout<<b.block<1000,3>(0,0);
-    //construct 2
-
-    // Mat rect_bg_value=poisson_mixed_img(rect_bg);
-    // Mat nesw=(Mat_<char>(4,2)<<0,-1,1,0,0,1,-1,0);
-    // Eigen::MatrixXf b=Eigen::MatrixXf::Zero(pts_index.size(),3);
-    // std::vector<Eigen::Triplet<float>> coefficients;
-    // for (int i = 0; i < pts_index.size(); ++i)
-    // {   
-    //     //for(int channel=0;channel<bg.channels();channel++){
-    //     coefficients.push_back(Eigen::Triplet<float>(i, i, -4));
-    //     int error[3]={0,0,0};
-    //     for(int k=0;k<4;k++){       //consider the four direction NESW
-    //         int h=pts_index[i].y+nesw.at<char>(k,1);
-    //         int w=pts_index[i].x+nesw.at<char>(k,0);
-    //         if(!map_eigen.coeffRef(h,w))
-    //         {   
-    //             //cout<<"map eigen:"<<map_eigen(h,w)<<endl;
-    //             //update error 
-    //             error[0] +=(int)rect_bg_value.at<Vec3b>(h,w)[0];
-    //             error[1] +=(int)rect_bg_value.at<Vec3b>(h,w)[1];
-    //             error[2] +=(int)rect_bg_value.at<Vec3b>(h,w)[2];
-    //             //circle(rect_bg_value,Point2f(w,h),1,Scalar(255,0,0));
-    //         }
-    //         else{ //construct coefficients in A
-    //             //cout<<"map eigen:"<<map_eigen(h,w)<<endl;
-    //             coefficients.push_back(Eigen::Triplet<float>(i, map_eigen.coeffRef(h,w)-1,1.0));//index_map.at<uchar>(h,w), 1));
-    //         }
-    //     }
-    //     float div[3]={0,0,0};
-    //     for(int channel=0;channel<bg.channels();channel++){  //construct b
-    //         div[channel]=(float)(lap_mask.at<Vec3b>(pts_index[i].y,pts_index[i].x)[channel]-error[channel]);
-    //     }
-    //     b.row(i)<<div[0],div[1],div[2];
-    // }
-
-
     Eigen::SparseMatrix<float> A(pts_index.size(),pts_index.size());
+    //cout<<"ha.1"<<endl;
     A.setFromTriplets(coefficients.begin(),coefficients.end());
-
+    //cout<<"ha.2"<<endl;
     //solve AX=b
     Eigen::MatrixXf X(pts_index.size(),3);
     Eigen::SparseLU< Eigen::SparseMatrix<float> > solver;
