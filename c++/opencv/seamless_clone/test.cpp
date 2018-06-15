@@ -37,14 +37,29 @@ class MaskGenerate{
         void drawMask(int event,int x,int y,int flags);   
 };
 
-int main(){
-    //m1
+int main(int argc, char *argv[]){
+    string bg_path,fg_path;//backgroung img path and foreground img path
+    int offsetX=0;         
+    int offsetY=0;
+    if(argc==1){
+        bg_path="img/1/bg.jpg";
+        fg_path="img/1/fg.jpg";
+        offsetX=50;         
+        offsetY=80;
+    }
+    else if(argc==5){
+        bg_path=argv[1];
+        fg_path=argv[2];
+        offsetX=atoi(argv[3]);
+        offsetY=atoi(argv[4]);
+    }
+    else{
+        cout<<"incorrect parameter number. <bg_path> <fg_path> <offsetX> <offsetY>"<<endl;
+        return -1;
+    }
     // string bg_path="img/ground.jpg";//img/wallheaven.jpg";//"img/1/bg.jpg";
     // string fg_path="img/cat2.jpg";//"img/kaola.jpg";//"img/1/fg.jpg";
 
-    //m2
-    string bg_path="img/1/bg.jpg";
-    string fg_path="img/1/fg.jpg";
 
     // Mat grass=imread("img/skelon.jpg");
     // Mat ground;
@@ -66,9 +81,10 @@ int main(){
     MaskGenerate maskGenerate(fg);//generate the mask by user
     mask=maskGenerate.mask_final;
     imshow("mask",mask);
+    //imwrite("img/mask_cat.jpg",mask);
 
     Mat general_mixed_img,poisson_mixed_img,compare_img;
-    seamlessClone(bg, fg, mask, 50, 80, general_mixed_img,poisson_mixed_img);
+    seamlessClone(bg, fg, mask, offsetX, offsetY, general_mixed_img,poisson_mixed_img);
 
     hconcat(general_mixed_img,poisson_mixed_img,compare_img);
     imshow("result",compare_img);
